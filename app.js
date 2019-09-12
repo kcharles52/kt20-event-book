@@ -2,12 +2,13 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const graphqlHttp = require('express-graphql');
 const { buildSchema } = require('graphql');
+const mongoose = require('mongoose');
+
+// modals
+const Event = require('./models/event');
 
 // create an express application
 const app = express();
-
-// dummy data
-const events = [];
 
 app.use(bodyParser.json());
 app.use(
@@ -44,23 +45,50 @@ app.use(
     `),
     rootValue: {
       events: () => {
-        return events;
+        return Event.find({}).then(events => {
+          return events
+        }).catch(err => { throw err })
       },
       createEvent: (args) => {
-        const event = {
-          _id: Math.random().toString(),
+        const event = new Event({
           title: args.eventInput.title,
           description: args.eventInput.description,
-          price: args.eventInput.price,
-          date: new Date().toISOString()
-        };
+          price: +args.eventInput.price,
+          date: new Date(args.eventInput.date)
+        });
 
-        events.push(event);
-        return event;
+        return event
+          .save()
+          .then((result) => {
+            return { ...result._doc };
+          })
+          .catch((err) => {
+            console.log(err);
+            throw err;
+          });
       }
     },
     graphiql: true
   })
 );
 
-app.listen(5001);
+// connect to the database
+const url =
+  process.env.MONGODB_URL ||
+  process.env.DB_URL ||
+  `mongodb://localhost:27017/${process.env.MONGO_DB}`;
+const port = process.env.PORT
+
+mongoose
+  .connect(url, { useNewUrlParser: true })
+  .then(() => {
+    app.listen(port);
+    console.log(`Running at localhost:${port}`);
+  })
+  .catch((err) => {
+    console.log(err);
+  });
+
+mongoose.connection.once('open', () => {
+  console.log(`connected to database at ${url}`);
+});
