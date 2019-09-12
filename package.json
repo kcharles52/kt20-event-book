@@ -1,8 +1,11 @@
 {
-  "name": "KT20-EVENT-BOOKING",
+  "name": "kt20-event-booking",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "repository": {
+    "url": "https://github.com/kcharles52/kt20-event-booking"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon app.js"
@@ -11,6 +14,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.0",
     "express": "^4.17.1",
     "express-graphql": "^0.9.0",
