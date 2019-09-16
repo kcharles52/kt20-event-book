@@ -7,7 +7,10 @@ const convertDate = require('../../helpers/convertDate');
 const { user, singleEvent } = require('./commonFunctions');
 
 module.exports = {
-  bookings: async () => {
+  bookings: async (args, req) => {
+    if (!req.isAuthenticated) {
+      throw new Error('Unauthenticated! Please login');
+    }
     try {
       const bookings = await Booking.find();
 
@@ -24,11 +27,14 @@ module.exports = {
       throw err;
     }
   },
-  bookEvent: async (args) => {
+  bookEvent: async (args, req) => {
+    if (!req.isAuthenticated) {
+      throw new Error('Unauthenticated! Please login');
+    }
     try {
       const fetchedEvent = await Event.findOne({ _id: args.eventId });
       const booking = new Booking({
-        user: '5d7a46dc707ee632199f8a0e',
+        user: req.userId,
         event: fetchedEvent
       });
       const result = await booking.save();
@@ -44,13 +50,21 @@ module.exports = {
       throw err;
     }
   },
-  cancelBooking: async (args) => {
+  cancelBooking: async (args, req) => {
+    if (!req.isAuthenticated) {
+      throw new Error('Unauthenticated! Please login');
+    }
+
     try {
       const booking = await Booking.findById(args.bookingId).populate('event');
       const event = {
         ...booking.event._doc,
         creator: user(booking.event.creator)
       };
+
+      if (req.userId !== booking.event.creator.id) {
+        throw new Error('You can not cancel a booking you did not make')
+      }
 
       await Booking.deleteOne({ _id: args.bookingId });
       return event;
