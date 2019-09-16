@@ -1,4 +1,5 @@
-const Event = require('../../models/event')
+const Event = require('../../models/event');
+const User = require('../../models/user');
 const { user } = require('./commonFunctions');
 
 module.exports = {
@@ -16,36 +17,36 @@ module.exports = {
         throw err;
       });
   },
-  createEvent: (args) => {
+  createEvent: async (args, req) => {
+    if (!req.isAuthenticated) {
+      throw new Error('Unauthenticated! Please login');
+    }
+
     const event = new Event({
       title: args.eventInput.title,
       description: args.eventInput.description,
       price: +args.eventInput.price,
       date: new Date(args.eventInput.date),
-      creator: '5d7a46dc707ee632199f8a0e'
+      creator: req.userId
     });
     let createdEvent;
 
-    return event
-      .save()
-      .then((result) => {
-        createdEvent = { ...result._doc, creator: user(result.creator) };
-        return User.findById('5d7a46dc707ee632199f8a0e');
-      })
-      .then((user) => {
-        if (!user) {
-          throw new Error('User not found');
-        }
+    try {
+      const savedEvent = await event.save();
+      const creator = await User.findById(req.userId);
 
-        user.createdEvents.push(event);
-        return user.save();
-      })
-      .then(() => {
-        return createdEvent;
-      })
-      .catch((err) => {
-        console.log(err);
-        throw err;
-      });
+      createdEvent = { ...savedEvent._doc, creator: user(savedEvent.creator) };
+
+      if (!creator) {
+        throw new Error('User not found');
+      }
+
+      creator.createdEvents.push(event);
+      await creator.save();
+
+      return createdEvent;
+    } catch (error) {
+      throw error;
+    }
   }
 };

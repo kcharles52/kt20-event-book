@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const graphqlHttp = require('express-graphql');
 const mongoose = require('mongoose');
+const isAutheticated = require('./middleware/is-auth');
 
 const schema = require('./graphql/schema');
 const rootValue = require('./graphql/resolvers');
@@ -10,6 +11,7 @@ const rootValue = require('./graphql/resolvers');
 const app = express();
 
 app.use(bodyParser.json());
+app.use(isAutheticated);
 
 app.use(
   '/graphql',
